@@ -31,7 +31,7 @@ export default function Hero({ data }) {
       gsap.set(items, { y: 42, opacity: 0, filter: 'blur(10px)' })
       gsap.to(items, {
         y: 0,
-        opacity: 1,
+        opacity: 1, 
         filter: 'blur(0px)',
         duration: 1.1,
         ease: 'power3.out',

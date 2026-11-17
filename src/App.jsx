@@ -7,7 +7,7 @@ import Certifications from './components/Certifications.jsx'
 import Projects from './components/Projects.jsx'
 import Github from './components/Github.jsx'
 import PullQuote from './components/PullQuote.jsx'
-import Testimonials from './components/Testimonials.jsx'
+import GalaxyRunner from './components/GalaxyRunner.jsx'
 import Contact from './components/Contact.jsx'
 import Footer from './components/Footer.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
@@ -28,6 +28,7 @@ export default function App() {
       <Navbar name={portfolioData.name} />
       <main id="main" tabIndex={-1}>
         <Hero data={portfolioData} />
+        <GalaxyRunner />
         <About paragraphs={portfolioData.about} highlights={portfolioData.highlights} />
         <Experience items={portfolioData.experience} />
         <Skills skills={portfolioData.skills} />
@@ -35,7 +36,6 @@ export default function App() {
         <Projects projects={portfolioData.projects} />
         <Github user={portfolioData.githubUser} />
         <PullQuote text={portfolioData.pullQuote?.text} attribution={portfolioData.pullQuote?.attribution} />
-        <Testimonials items={portfolioData.testimonials} />
         <Contact data={portfolioData} />
       </main>
       <Footer name={portfolioData.name} />

@@ -7,6 +7,7 @@ import nodemailer from 'nodemailer'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
 const RATE_MAX = 5 // messages per IP per window
+const REQUIRED_ENV = ['MAIL_TO', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS']
 
 // Best-effort: persists across warm invocations on the same instance only.
 // For stricter limits across all instances, swap in a shared store (e.g. Upstash).
@@ -34,12 +35,88 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
+/**
+ * Reads the mail settings once per request and reports exactly which keys the
+ * deployment is missing. Vercel does not read .env from the repo, so a
+ * "Mail is not configured" response almost always means the Production env
+ * vars were never added — or were added without redeploying.
+ */
+function readMailConfig() {
+  const host = String(process.env.SMTP_HOST || '').trim()
+  const port = Number(process.env.SMTP_PORT || 0)
+  const secureFlag = String(process.env.SMTP_SECURE ?? '').trim().toLowerCase()
+  const missing = REQUIRED_ENV.filter((key) => !String(process.env[key] || '').trim())
+
+  return {
+    to: String(process.env.MAIL_TO || '').trim(),
+    from: String(process.env.MAIL_FROM || '').trim(),
+    host,
+    port: port || 587,
+    // Explicit SMTP_SECURE wins; otherwise infer from the port (465 = implicit TLS).
+    secure: secureFlag ? secureFlag === 'true' : port === 465,
+    user: String(process.env.SMTP_USER || '').trim(),
+    pass: String(process.env.SMTP_PASS || ''),
+    gmail: /(^|\.)gmail\.com$/i.test(host),
+    missing,
+    configured: missing.length === 0,
+  }
+}
+
+function configError(config) {
+  return {
+    ok: false,
+    error: `Mail is not configured. Missing: ${config.missing.join(', ')}. Add them in Vercel → Project Settings → Environment Variables (Production and Preview), then redeploy.`,
+    missing: config.missing,
+  }
+}
+
+function buildTransport(config) {
+  return nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    // STARTTLS upgrade for 587; implicit TLS is handled by `secure`.
+    requireTLS: !config.secure && config.port === 587,
+    auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
+    // Fail fast enough that Vercel returns a useful JSON error instead of a timeout page.
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 12000,
+    tls: { minVersion: 'TLSv1.2' },
+  })
+}
+
+function mailErrorHint(err, config) {
+  const code = err && err.code ? String(err.code) : ''
+  if (code === 'EAUTH') {
+    return config.gmail
+      ? 'Gmail rejected the login. Use a 16-character App Password (Google Account → Security → 2-Step Verification → App passwords), not your normal password.'
+      : 'SMTP login failed (EAUTH). Check SMTP_USER and SMTP_PASS.'
+  }
+  if (code === 'ENOTFOUND' || code === 'EDNS') {
+    return `Could not find SMTP host "${config.host}". Check SMTP_HOST (for Gmail: smtp.gmail.com).`
+  }
+  if (['ECONNECTION', 'ESOCKET', 'ETIMEDOUT', 'ECONNREFUSED'].includes(code)) {
+    return `Could not reach ${config.host}:${config.port} (${code}). For Gmail use SMTP_PORT=465 with SMTP_SECURE=true, or 587 with SMTP_SECURE=false.`
+  }
+  if (code === 'EENVELOPE') {
+    return 'Invalid sender or recipient address (EENVELOPE). Check MAIL_TO and MAIL_FROM.'
+  }
+  return 'Check your SMTP settings in the Vercel project environment variables.'
+}
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
+    const config = readMailConfig()
     return res.status(200).json({
       ok: true,
       service: 'contact-api',
-      message: 'POST JSON { name, email, message, company? } to this endpoint.',
+      configured: config.configured,
+      missing: config.missing,
+      gmail: config.gmail,
+      hint: config.configured
+        ? 'POST JSON { name, email, message, company? } to this endpoint to send a message.'
+        : 'Add the missing variables in Vercel → Project Settings → Environment Variables (Production and Preview), then redeploy. For Gmail use SMTP_HOST=smtp.gmail.com, SMTP_PORT=465, SMTP_SECURE=true and an App Password.',
     })
   }
   if (req.method !== 'POST') {
@@ -80,23 +157,12 @@ export default async function handler(req, res) {
     return res.status(422).json({ ok: false, error: 'One or more fields are too long.' })
   }
 
-  const to = process.env.MAIL_TO
-  if (!to) {
-    return res.status(500).json({
-      ok: false,
-      error: 'Mail is not configured. Set MAIL_TO and SMTP settings in the Vercel project environment variables.',
-    })
+  const config = readMailConfig()
+  if (!config.configured) {
+    return res.status(500).json(configError(config))
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: String(process.env.SMTP_SECURE || '').toLowerCase() === 'true',
-    auth:
-      process.env.SMTP_USER && process.env.SMTP_PASS
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-        : undefined,
-  })
+  const transporter = buildTransport(config)
 
   try {
     const safeName = name.replace(/[\r\n]+/g, ' ').trim()
@@ -148,8 +214,8 @@ export default async function handler(req, res) {
       </div>`
 
     await transporter.sendMail({
-      from: process.env.MAIL_FROM || process.env.SMTP_USER || to,
-      to,
+      from: config.from || config.user || config.to,
+      to: config.to,
       replyTo: `${safeName} <${safeEmail}>`,
       subject,
       text,
@@ -159,12 +225,10 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error('Contact mail error:', err)
     const code = err && err.code ? String(err.code) : ''
-    let hint = 'Check your SMTP settings.'
-    if (code === 'EAUTH') hint = 'SMTP login failed (EAUTH). For Gmail use an App Password.'
-    else if (code === 'ECONNECTION' || code === 'ESOCKET' || code === 'ETIMEDOUT')
-      hint = `Could not reach the mail server (${code}). Check SMTP_HOST, SMTP_PORT, SMTP_SECURE.`
-    else if (code) hint = `Mail error (${code}). Check your SMTP settings.`
-
-    return res.status(500).json({ ok: false, error: `Mail could not be sent. ${hint}` })
+    return res.status(500).json({
+      ok: false,
+      code: code || undefined,
+      error: `Mail could not be sent. ${mailErrorHint(err, config)}`,
+    })
   }
 }

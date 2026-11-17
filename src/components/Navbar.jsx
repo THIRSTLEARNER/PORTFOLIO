@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { lenisControl } from './SmoothScroll.jsx'
 
 const LINKS = [
   { href: '#about', label: 'About' },
@@ -43,9 +44,16 @@ export default function Navbar({ name }) {
     }
   }, [open])
 
-  // Lock body scroll while the mobile menu is open.
+  // Hold the scroll while the mobile menu is open — through Lenis, so the
+  // header keeps its position: sticky (a body overflow lock breaks sticky).
+  // Native lock only as a fallback when Lenis isn't running (reduced motion).
   useEffect(() => {
     if (!open) return undefined
+    const lenis = lenisControl.current
+    if (lenis) {
+      lenis.stop()
+      return () => lenis.start()
+    }
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {

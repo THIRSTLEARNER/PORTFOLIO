@@ -8,7 +8,6 @@ const HIDDEN_KEY = 'anya:hidden'
 const POS_KEY = 'anya:pos'
 
 const CATCHPHRASES = ['nya!', 'WAKU WAKU!', 'hehehe', 'peanut!', '*boop*', 'nyanya~']
-const WANDER_SPEED = 0.045 // px per ms — an unhurried stroll
 
 function readStored(key, fallback) {
   try {
@@ -29,8 +28,6 @@ export default function AnyaPet() {
   const wrapRef = useRef(null)
   const petRef = useRef(null)
   const pos = useRef({ x: null, y: null })
-  const dir = useRef(1)
-  const nextTurn = useRef(0)
   const bobOffset = useRef(Math.random() * Math.PI * 2)
   const dragState = useRef(null)
   const moved = useRef(0)
@@ -78,9 +75,8 @@ export default function AnyaPet() {
     if (!reducedMotion.current) setBurst((n) => n + 1)
   }, [boops, say, showFace])
 
-  // Position + wander loop. Initial placement happens in a layout effect so the
-  // pet never flashes at the wrong spot; the stroll itself is skipped when the
-  // user prefers reduced motion, leaving a static, boopable sticker.
+  // Pinned at the bottom-left corner — she greets you on load instead of strolling.
+  // Boopable, draggable, hidable; she just doesn't wander off on her own.
   useLayoutEffect(() => {
     if (hidden) return undefined
     const el = petRef.current
@@ -94,7 +90,6 @@ export default function AnyaPet() {
     pos.current = stored
       ? { x: Math.min(Math.max(0, stored.x), maxX), y: Math.min(Math.max(0, stored.y), maxY) }
       : { x: 20, y: maxY - 20 }
-    nextTurn.current = performance.now() + 2500 + Math.random() * 3000
     const apply = () => {
       wrap.style.transform = `translate3d(${pos.current.x}px, ${pos.current.y}px, 0)`
     }
@@ -116,19 +111,6 @@ export default function AnyaPet() {
       const dt = Math.min(50, now - last)
       last = now
       if (!dragState.current) {
-        if (now >= nextTurn.current) {
-          const roll = Math.random()
-          dir.current = roll < 0.15 ? 0 : roll < 0.575 ? -1 : 1 // sometimes just lingers
-          nextTurn.current = now + 2500 + Math.random() * 4000
-        }
-        pos.current.x += dir.current * WANDER_SPEED * dt
-        if (pos.current.x <= 0) {
-          pos.current.x = 0
-          dir.current = 1
-        } else if (pos.current.x >= maxX) {
-          pos.current.x = maxX
-          dir.current = -1
-        }
         bobOffset.current += dt * 0.006
       }
       pulse.current = Math.max(0, pulse.current - dt * 0.0022)

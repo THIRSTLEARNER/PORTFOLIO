@@ -5,6 +5,10 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
+// lets other components stop the scroll (e.g. while the mobile menu is open) —
+// body overflow locks break position: sticky, this one doesn't
+export const lenisControl = { current: null }
+
 export default function SmoothScroll() {
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -16,6 +20,7 @@ export default function SmoothScroll() {
       smoothWheel: true,
       touchMultiplier: 1.4,
     })
+    lenisControl.current = lenis
 
     lenis.on('scroll', ScrollTrigger.update)
 
@@ -48,6 +53,7 @@ export default function SmoothScroll() {
     return () => {
       document.removeEventListener('click', onClick)
       gsap.ticker.remove(ticker)
+      lenisControl.current = null
       lenis.destroy()
       ScrollTrigger.getAll().forEach((t) => t.kill())
     }

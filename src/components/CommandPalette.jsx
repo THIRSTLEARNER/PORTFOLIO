@@ -33,7 +33,7 @@ export default function CommandPalette({ data }) {
       { id: 'projects', label: 'Work', hint: 'Section', action: () => (window.location.hash = '#projects') },
       { id: 'github', label: 'Open source', hint: 'GitHub', action: () => (window.location.hash = '#github') },
       { id: 'approach', label: 'The approach', hint: 'Philosophy', action: () => (window.location.hash = '#approach') },
-      { id: 'testimonials', label: 'Testimonials', hint: 'Section', action: () => (window.location.hash = '#testimonials') },
+      { id: 'playground', label: 'Playground', hint: 'Section', action: () => (window.location.hash = '#playground') },
       { id: 'contact', label: 'Contact', hint: 'Section', action: () => (window.location.hash = '#contact') },
     ]
 

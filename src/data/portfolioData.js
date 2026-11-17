@@ -118,7 +118,7 @@ export const portfolioData = {
           'A zero-install photobooth anyone can open, face-tracked props included, that ships perfectly on accessibility, best practices and SEO audits.',
         metric: {
           value: '3 × 100',
-          label: 'Lighthouse a11y · Best Practices · SEO',
+          label: 'Lighthouse a11y  Best Practices  SEO',
           sub: 'Live-site audit, Nov 2026',
         },
       },
@@ -139,7 +139,7 @@ export const portfolioData = {
         process:
           'Hand-built static multi-page HTML/CSS/vanilla-JS (Home, Product, Cart, Account, About, Contact): responsive grid layout, CSS product cards with ratings, vanilla-JS slide-down mobile menu, category and “Top Selling / Latest” sections, a brand trust row, and customer testimonial blocks. Deployed as static files on Vercel.',
         result:
-          'A complete shop experience — catalog, ratings, cart and social proof — running for free as a static site.',
+          'A complete shop experience — catalog, ratings, cart and social proof    running for free as a static site.',
         metric: {
           value: '100',
           label: 'Lighthouse Best Practices',
@@ -150,7 +150,7 @@ export const portfolioData = {
     {
       title: 'Procedural Galaxy',
       description:
-        'A WebGL galaxy generated purely in code — 18,000 particles, no textures, drag to orbit.',
+        'A WebGL galaxy generated purely in code  18,000 particles, no textures, drag to orbit.',
       stack: ['Three.js', 'JavaScript'],
       video: '',
       poster: '',
@@ -160,7 +160,7 @@ export const portfolioData = {
       demo: 'galaxy',
       caseStudy: {
         problem:
-          'Render a spiral galaxy with silky motion on ordinary hardware — no meshes, no textures, no downloads.',
+          'Render a spiral galaxy with silky motion on ordinary hardware  no meshes, no textures, no downloads.',
         process:
           'BufferGeometry + PointsMaterial with per-particle size, phase, speed and opacity; a drag-to-orbit pointer model with inertial easing; IntersectionObserver + visibilitychange pause; prefers-reduced-motion path renders half the particles statically.',
         result:
@@ -168,12 +168,12 @@ export const portfolioData = {
         metric: {
           value: '2',
           label: 'Draw calls for 18k particles',
-          sub: 'Points × 2 · zero textures',
+          sub: 'Points × 2  zero textures',
         },
       },
     },
   ],
-  // Full-bleed pull-quote strip between projects/GitHub and testimonials.
+  // Full-bleed pull-quote strip between projects/GitHub and the contact section.
   // Written to match how the live apps actually audit (see case studies).
   // Swap in a real client quote when one exists:
   // text: 'Quote from a client.', attribution: '— Name, Role'
@@ -181,18 +181,4 @@ export const portfolioData = {
     text: 'Fast, accessible, considered — that’s how I build for the web.',
     attribution: '— Rainier M.',
   },
-  testimonials: [
-    {
-      quote:
-        'Rainier brought clarity to a messy problem and shipped a solution that was easy for the team to maintain.',
-      name: 'Austin V',
-      role: 'co Developer',
-    },
-    {
-      quote:
-        'Thoughtful about both the user experience and the technical details — communication was clear throughout.',
-      name: 'Bamstay Dormies Team',
-      role: 'Ui/UX Designer',
-    },
-  ],
 }

@@ -43,7 +43,7 @@ export default function Contact({ data }) {
         message:
           err instanceof Error && err.message
             ? err.message
-            : 'Could not send right now. Make sure the mail server is running (`npm run server`) on http://localhost:3001.',
+            : 'Could not send right now. Please try again in a minute or email me directly.',
         nonce: Date.now(),
       })
       setShaking(true)
