@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+.env.*
+!.env.example
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Agent/tooling directories (not part of the site)
+.agents/
+.taste-skill/
+.impeccable/

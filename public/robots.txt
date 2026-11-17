@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Once you have a production domain, uncomment and edit:
+# Sitemap: https://your-domain.com/sitemap.xml
